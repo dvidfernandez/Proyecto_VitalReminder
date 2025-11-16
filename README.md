@@ -20,5 +20,6 @@ PROTOTIPO ALTA FIDELIDAD [Figma]
 https://www.figma.com/design/lmSetHlRjGJzcF4DKEVFLK/Prototipo-Alta?node-id=0-1&p=f&t=giINXADL1xncQr5i-0
 
 SITE MAP
-
+https://www.figma.com/design/lmSetHlRjGJzcF4DKEVFLK/Prototipo- Alta?node-id=0-1&p=f&m=draw
 USER FLOW 
+https://www.figma.com/design/lmSetHlRjGJzcF4DKEVFLK/Prototipo- Alta?node-id=77-45&t=P9DpEhoYSwThatHI-1
