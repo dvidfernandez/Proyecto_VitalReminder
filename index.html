@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <title>VitalReminder - Prototipo</title>
+
+  <style>
+    :root{
+      --bg:#F3F7F6;
+      --card:#FFFFFF;
+      --accent:#2E8B57; /* verde calmante */
+      --accent-contrast:#FFFFFF;
+      --muted:#6b7280;
+      --danger:#E53E3E;
+      --shadow: 0 6px 18px rgba(0,0,0,0.08);
+      --radius:14px;
+      --big:20px;
+      --btn-padding:14px 18px;
+      font-family: Inter, system-ui, -apple-system, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:#0f172a;}
+    .app{max-width:420px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+    header.appbar{padding:18px;background:linear-gradient(180deg,var(--accent),#2fa36a);color:var(--accent-contrast);border-radius:0 0 16px 16px;box-shadow:var(--shadow);}
+    header.appbar h1{margin:0;font-size:20px;letter-spacing:0.2px;}
+    main{padding:16px;flex:1}
+    .card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px;}
+    .big-btn{
+      display:inline-flex;align-items:center;justify-content:center;
+      background:var(--accent);color:var(--accent-contrast);
+      border:none;border-radius:12px;padding:var(--btn-padding);font-size:16px;font-weight:600;
+      cursor:pointer;box-shadow:0 6px 12px rgba(46,139,87,0.18);
+    }
+    .ghost-btn{background:transparent;border:2px solid rgba(15,23,42,0.06);color:inherit;padding:12px;border-radius:12px}
+    .primary-title{font-size:18px;font-weight:700;margin-bottom:6px;}
+    .muted{color:var(--muted);font-size:13px;}
+    label{display:block;font-weight:600;margin-bottom:6px;font-size:14px;}
+    input[type="text"], input[type="email"], input[type="password"], input[type="time"], input[type="date"], select{
+      width:100%;padding:12px;border-radius:10px;border:1px solid #e6e9ee;font-size:15px;margin-bottom:10px;
+    }
+
+    nav.bottom-nav{position:sticky;bottom:10px;display:flex;gap:8px;justify-content:space-between;background:transparent;padding:10px;}
+    nav.bottom-nav button{flex:1;border-radius:12px;border:none;padding:12px;font-weight:700}
+    .tab-active{background:var(--accent);color:var(--accent-contrast);}
+    .tab-inactive{background:#fff;color:#111;border:1px solid #e5e7eb;}
+
+    .reminder-row{display:flex;align-items:center;justify-content:space-between;padding:14px;border-radius:10px;border:1px solid #f1f5f9;margin-bottom:8px;}
+    .pill-name{font-size:16px;font-weight:700}
+    .pill-meta{font-size:13px;color:var(--muted)}
+    .small{font-size:13px}
+    .danger{color:var(--danger);font-weight:700}
+
+    /* Modal / overlay */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:40;}
+    .overlay.show{display:flex;}
+    .modal{background:var(--card);padding:20px;border-radius:12px;width:100%;max-width:420px;box-shadow:var(--shadow)}
+    .modal h2{margin:0 0 6px 0;font-size:20px}
+    .modal p{margin:0 0 12px 0;color:var(--muted)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+    /* Large accessible tap targets */
+    button, .big-touch{min-height:48px;border-radius:10px;}
+
+    /* Accessibility helpers */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+    footer.note{font-size:12px;color:var(--muted);text-align:center;padding:8px 6px;}
+    /* responsive */
+    @media (min-width:520px){ .app{margin-top:20px;border-radius:16px;overflow:hidden} }
+    
+    /* ===================================== *//* PANTALLA DE BIENVENIDA - VitalReminder *//* ===================================== */
+    #welcome-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #f2f3f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .welcome-content {
+      text-align: center;
+      padding: 20px;
+    }
+    .welcome-icon-wrapper {
+      width: 140px;
+      height: 140px;
+      background-color: #6fcf97;
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px auto;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+    .welcome-icon-wrapper img {
+      width: 80px;
+      height: 80px;
+    }
+    .welcome-content h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #000;
+    }
+    .welcome-content p {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    #welcome-screen button {
+      background-color: #6fcf97;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 36px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #welcome-screen button:active {
+      transform: scale(0.97);
+    }
+
+  </style>
+</head>
+<body>
+<div id="welcome-screen">
+  <div class="welcome-content">
+
+    <div class="welcome-icon-wrapper">
+      <img src="icono.ico" alt="VitalReminder Icon">
+    </div>
+
+    <h1>VitalReminder</h1>
+    <p>Tu salud, organizada</p>
+
+    <button id="startAppBtn">Comenzar</button>
+
+  </div>
+</div>
+  <div class="app" role="application" aria-label="VitalReminder app">
+    <header class="appbar" id="header">
+      <h1 id="appTitle">VitalReminder</h1>
+      <div id="headerSubtitle" style="font-size:13px;margin-top:6px;opacity:0.95">Tu salud, organizada</div>
+    </header>
+
+    <main id="main">
+      <section id="screen-splash" class="card" aria-hidden="false">
+        <div style="text-align:center;padding:18px 6px;">
+          <h2 class="primary-title">Bienvenido a VitalReminder</h2>
+          <p class="muted">Una app simple para recordar medicamentos y citas médicas para adultos mayores.</p>
+          <div style="margin-top:16px;display:flex;gap:10px;justify-content:center">
+            <button class="big-btn" id="goLogin">Iniciar sesión</button>
+            <button class="big-btn" id="goRegister" style="background:#0ea5a3">Crear cuenta</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-login" class="card" style="display:none;">
+        <h2 class="primary-title">Iniciar sesión</h2>
+        <p class="muted">Introduce tu correo para entrar.</p>
+        <label for="loginEmail">Correo electrónico</label>
+        <input id="loginEmail" type="email" autocomplete="username" placeholder="ejemplo@correo.com" />
+        <label for="loginPass">Contraseña</label>
+        <input id="loginPass" type="password" autocomplete="current-password" placeholder="Contraseña" />
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="big-btn" id="btnLogin">Iniciar sesión</button>
+          <button class="ghost-btn" id="btnBackFromLogin">Volver</button>
+        </div>
+        <div style="margin-top:12px;font-size:13px;"><span class="muted">¿No tienes cuenta?</span> <button id="toRegisterSmall" class="ghost-btn" style="padding:8px 12px">Crear cuenta</button></div>
+      </section>
+
+      <section id="screen-register" class="card" style="display:none;">
+        <h2 class="primary-title">Crear cuenta</h2>
+        <p class="muted">Registra un nombre y selecciona el rol.</p>
+        <label for="regName">Nombre completo</label>
+        <input id="regName" type="text" placeholder="Nombre" />
+        <label for="regEmail">Correo</label>
+        <input id="regEmail" type="email" placeholder="ejemplo@correo.com" />
+        <label for="regPass">Contraseña</label>
+        <input id="regPass" type="password" placeholder="Contraseña" />
+        <label for="regRole">Tipo de usuario</label>
+        <select id="regRole">
+          <option value="adulto">Adulto Mayor</option>
+          <option value="cuidador">Cuidador</option>
+        </select>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="big-btn" id="btnCreateAccount">Crear cuenta</button>
+          <button class="ghost-btn" id="btnBackFromRegister">Volver</button>
+        </div>
+      </section>
+
+      <section id="screen-app" style="display:none;">
+        <div id="homeView" class="card" style="margin-bottom:10px;">
+          <h3 class="primary-title">Recordatorios activos</h3>
+          <div id="activeReminders" aria-live="polite"></div>
+          <div style="margin-top:8px;">
+            <button class="big-btn" id="btnAddMed_short">Añadir medicamento</button>
+          </div>
+        </div>
+
+        <div id="medView" class="card" style="display:none;">
+          <h3 class="primary-title">Medicamentos</h3>
+          <div id="medList" style="margin-bottom:10px;"></div>
+          <hr style="border:none;height:12px;background:transparent" />
+          <h4 style="margin:0 0 8px 0">Agregar medicamento</h4>
+          <label for="medName">Nombre del medicamento</label>
+          <input id="medName" type="text" placeholder="Ibuprofeno" />
+          <label for="medDose">Dosis (texto)</label>
+          <input id="medDose" type="text" placeholder="200 mg" />
+          <label for="medTime">Hora</label>
+          <input id="medTime" type="time" value="12:00" />
+          <label for="medFreq">Frecuencia</label>
+          <select id="medFreq">
+            <option value="once">Una vez</option>
+            <option value="daily">Diaria</option>
+            <option value="every8">Cada 8 horas</option>
+          </select>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="big-btn" id="btnSaveMed">Guardar medicamento</button>
+            <button class="ghost-btn" id="btnClearMed">Limpiar</button>
+          </div>
+        </div>
+
+        <div id="appView" class="card" style="display:none;">
+          <h3 class="primary-title">Citas médicas</h3>
+          <div id="appList" style="margin-bottom:10px;"></div>
+          <hr style="border:none;height:12px;background:transparent" />
+          <h4 style="margin:0 0 8px 0">Agregar cita</h4>
+          <label for="appDate">Fecha</label>
+          <input id="appDate" type="date" />
+          <label for="appTime">Hora</label>
+          <input id="appTime" type="time" />
+          <label for="appDoctor">Médico / Especialidad</label>
+          <input id="appDoctor" type="text" placeholder="Dermatología - Dr. Juan" />
+          <label for="appPlace">Lugar</label>
+          <input id="appPlace" type="text" placeholder="Clínica..." />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="big-btn" id="btnSaveApp">Guardar cita</button>
+            <button class="ghost-btn" id="btnClearApp">Limpiar</button>
+          </div>
+        </div>
+
+        <div id="settingsView" class="card" style="display:none;">
+          <h3 class="primary-title">Ajustes</h3>
+          <label for="alertType">Tipo de alerta</label>
+          <select id="alertType">
+            <option value="sound">Sonido + Visual</option>
+            <option value="vibrate">Vibración (si aplica)</option>
+            <option value="visual">Solo visual</option>
+          </select>
+          <label for="notifyCare">Notificar al cuidador</label>
+          <select id="notifyCare">
+            <option value="never">Nunca</option>
+            <option value="after1">Después de 1 recordatorio perdido</option>
+            <option value="after2">Después de 2 recordatorios</option>
+            <option value="always">Siempre (al confirmar)</option>
+          </select>
+          <hr style="border:none;height:12px;background:transparent" />
+          <h4 style="margin:0 0 8px 0">Contacto del cuidador</h4>
+          <label for="careName">Nombre del cuidador</label>
+          <input id="careName" type="text" placeholder="Nombre del cuidador" />
+          <label for="carePhone">Teléfono / Número</label>
+          <input id="carePhone" type="text" placeholder="+57 300 123 4567" />
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="big-btn" id="btnSaveSettings">Guardar ajustes</button>
+            <button class="ghost-btn" id="btnResetData">Borrar datos (prueba)</button>
+          </div>
+        </div>
+
+      </section>
+
+      <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" role="document">
+          <h2 id="modalTitle">Recordatorio</h2>
+          <p id="modalText">Es hora de tomar Ibuprofeno</p>
+          <div class="actions" id="modalActions" style="margin-top:12px;">
+            <button class="big-btn" id="btnTaken">Pastilla tomada</button>
+            <button class="ghost-btn" id="btnSnooze">Posponer 10 min</button>
+            <button class="ghost-btn danger" id="btnNotifyCare">Notificar cuidador</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <button id="tabHome" class="tab-active">Inicio</button>
+      <button id="tabMeds" class="tab-inactive">Medicamentos</button>
+      <button id="tabApps" class="tab-inactive">Citas</button>
+      <button id="tabSettings" class="tab-inactive">Ajustes</button>
+    </nav>
+
+    <footer class="note card" style="margin:12px;background:transparent;box-shadow:none">
+      Diseñado para adultos mayores — botones grandes, alto contraste y flujos simples.
+    </footer>
+  </div>
+
+  <script>
+  /*************************************************************************
+   * VitalReminder - Single file prototype (HTML/CSS/JS)
+   * - Guarda datos en localStorage (vitalData)
+   * - Simula recordatorios con setTimeouts basados en la hora local
+   * - Flujos: login/register, add medication, add appointment, settings
+   * - Accessible: aria labels, large tap targets, readable fonts
+   *************************************************************************/
+
+  (function(){
+    // ---------- Utilities ----------
+    const $ = id => document.getElementById(id);
+    const now = () => new Date();
+    const formatTime = d => d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const formatDate = d => d.toLocaleDateString();
+
+    // localStorage key
+    const LSKEY = 'vitalData_v1';
+
+    // default data structure
+    const defaultData = {
+      users: [], // {name,email,role,pass}
+      session: null, // email
+      meds: [], // {id,name,dose,time,freq, nextDue:timestamp, snoozeCount:0}
+      apps: [], // {id,date,time,doctor,place}
+      settings: {
+        alertType:'sound',
+        notifyCare:'after1',
+        caregiver:{name:'',phone:''}
+      }
+    };
+
+    // load / save
+    function loadData(){ try { return JSON.parse(localStorage.getItem(LSKEY)) || defaultCopy(); } catch(e){ return defaultCopy(); } }
+    function saveData(){ localStorage.setItem(LSKEY, JSON.stringify(state)); }
+    function defaultCopy(){ return JSON.parse(JSON.stringify(defaultData)); }
+
+    // generate id
+    function uid(prefix='id'){ return prefix + '|' + Math.random().toString(36).slice(2,9); }
+
+    // ---------- App State ----------
+    let state = loadData();
+    // timers: map medicationId -> timeoutId
+    let timers = {};
+
+    // ---------- DOM elems ----------
+    const screens = {
+      splash: $('screen-splash'),
+      login: $('screen-login'),
+      register: $('screen-register'),
+      app: $('screen-app')
+    };
+
+    const overlay = $('overlay');
+    const modalTitle = $('modalTitle');
+    const modalText = $('modalText');
+    const btnTaken = $('btnTaken');
+    const btnSnooze = $('btnSnooze');
+    const btnNotifyCare = $('btnNotifyCare');
+
+    // ---------- Routing & UI helpers ----------
+    function hideAllScreens(){
+      Object.values(screens).forEach(s => s.style.display='none');
+    }
+    function showScreen(name){
+      hideAllScreens();
+      if(name==='splash') screens.splash.style.display='block';
+      if(name==='login') screens.login.style.display='block';
+      if(name==='register') screens.register.style.display='block';
+      if(name==='app') screens.app.style.display='block';
+    }
+
+    // update bottom nav active state
+    function setActiveTab(tabName){
+      ['tabHome','tabMeds','tabApps','tabSettings'].forEach(id => {
+        const el = $(id);
+        if(!el) return;
+        if(id.toLowerCase().includes(tabName)) { el.className='tab-active'; } else { el.className='tab-inactive'; }
+      });
+      // show corresponding view
+      $('homeView').style.display = (tabName==='home') ? 'block' : 'none';
+      $('medView').style.display = (tabName==='meds') ? 'block' : 'none';
+      $('appView').style.display = (tabName==='apps') ? 'block' : 'none';
+      $('settingsView').style.display = (tabName==='settings') ? 'block' : 'none';
+    }
+
+    // ---------- Authentication (simple) ----------
+    function login(email, pass){
+      const u = state.users.find(x => x.email === email && x.pass === pass);
+      if(u){ state.session = u.email; saveData(); initAfterLogin(); return true; }
+      return false;
+    }
+    function register(user){
+      if(state.users.some(u=>u.email===user.email)) return false;
+      state.users.push(user); state.session = user.email; saveData(); initAfterLogin(); return true;
+    }
+    function currentUser(){ return state.users.find(u=>u.email===state.session) || null; }
+
+    // ---------- Rendering lists ----------
+    function renderActiveReminders(){
+      const container = $('activeReminders');
+      container.innerHTML='';
+      // upcoming meds whose nextDue is in future or <= now (show now)
+      const nowTs = Date.now();
+      const upcoming = state.meds
+        .map(m => Object.assign({},m))
+        .sort((a,b)=> (a.nextDue||0) - (b.nextDue||0));
+      if(upcoming.length===0){
+        container.innerHTML = '<div class="muted">No hay recordatorios programados. Añade un medicamento.</div>';
+        return;
+      }
+      upcoming.forEach(m=>{
+        const row = document.createElement('div');
+        row.className='reminder-row';
+        const left = document.createElement('div');
+        left.innerHTML = `<div class="pill-name">${escapeHtml(m.name)}</div><div class="pill-meta">${escapeHtml(m.dose)} • Próximo: ${m.nextDue?formatTime(new Date(m.nextDue)): '—'}</div>`;
+        const right = document.createElement('div');
+        const btn = document.createElement('button');
+        btn.className='big-touch';
+        btn.textContent='Abrir';
+        btn.style.padding='8px 12px';
+        btn.onclick = ()=> { // navigate to meds tab and focus item
+          setActiveTab('meds'); highlightMed(m.id);
+        };
+        right.appendChild(btn);
+        row.appendChild(left); row.appendChild(right);
+        container.appendChild(row);
+      });
+    }
+
+    function renderMedList(){
+      const container = $('medList'); container.innerHTML='';
+      if(state.meds.length===0){ container.innerHTML='<div class="muted">No hay medicamentos registrados.</div>'; return; }
+      state.meds.forEach(m=>{
+        const el = document.createElement('div'); el.className='card';
+        el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center';
+        el.innerHTML = `<div>
+          <div class="pill-name">${escapeHtml(m.name)}</div>
+          <div class="pill-meta">${escapeHtml(m.dose)} • ${m.freq} • Próximo: ${m.nextDue?formatTime(new Date(m.nextDue)):'—'}</div>
+        </div>`;
+        const right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='6px';
+        const takeBtn = document.createElement('button'); takeBtn.className='big-btn'; takeBtn.textContent='Confirmar toma';
+        takeBtn.onclick = ()=> confirmTaken(m.id);
+        const delBtn = document.createElement('button'); delBtn.className='ghost-btn'; delBtn.textContent='Eliminar';
+        delBtn.onclick = ()=> { if(confirm('Eliminar medicamento?')) { removeMed(m.id); } };
+        right.appendChild(takeBtn); right.appendChild(delBtn);
+        el.appendChild(right); container.appendChild(el);
+      });
+    }
+
+    function renderAppList(){
+      const c = $('appList'); c.innerHTML='';
+      if(state.apps.length===0){ c.innerHTML='<div class="muted">No hay citas programadas.</div>'; return; }
+      state.apps.sort((a,b)=> new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
+      state.apps.forEach(a=>{
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="pill-name">${escapeHtml(a.doctor)}</div>
+            <div class="pill-meta">${formatDate(new Date(a.date))} - ${a.time} • ${escapeHtml(a.place)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="big-btn" onclick="(function(){ /* no-op */ })()">Asistiré</button>
+            <button class="ghost-btn" onclick="(function(){ alert('Función reprogramar (demo)') })()">Reprogramar</button>
+          </div>
+        </div>`;
+        c.appendChild(el);
+      });
+    }
+
+    // ---------- Medication operations ----------
+    function addMed({name,dose,time,freq}){
+      const id = uid('med');
+      // compute nextDue: take next occurrence of time today or tomorrow
+      const [hh,mm] = (time||'12:00').split(':').map(Number);
+      const candidate = new Date();
+      candidate.setHours(hh,mm,0,0);
+      if(candidate.getTime() <= Date.now()){
+        // schedule according to freq: if once, schedule next day; if daily schedule next day; if every8 schedule +8h
+        if(freq==='once') candidate.setDate(candidate.getDate()+1);
+        else if(freq==='daily') candidate.setDate(candidate.getDate()+1);
+        else if(freq==='every8') candidate.setTime(candidate.getTime() + 8*60*60*1000);
+      }
+      const med = { id, name, dose, time, freq, nextDue: candidate.getTime(), snoozeCount:0 };
+      state.meds.push(med); saveData(); scheduleMed(med); renderMedList(); renderActiveReminders();
+    }
+
+    function removeMed(id){
+      // clear timer
+      if(timers[id]){ clearTimeout(timers[id]); delete timers[id]; }
+      state.meds = state.meds.filter(m=>m.id!==id); saveData(); renderMedList(); renderActiveReminders();
+    }
+
+    function scheduleMed(med){
+      // clear existing
+      if(timers[med.id]){ clearTimeout(timers[med.id]); delete timers[id]; }
+      const delay = Math.max(0, (med.nextDue || Date.now()) - Date.now());
+      // if delay is big (e.g., > 7 days) still set a timer; for demo, we allow it
+      timers[med.id] = setTimeout(()=> triggerMedReminder(med.id), delay);
+    }
+
+    function triggerMedReminder(id){
+      const med = state.meds.find(m=>m.id===id);
+      if(!med) return;
+      // Show modal
+      showModal(`¡Es hora!`, `¡${med.name}! ${med.dose} — ${formatTime(new Date(med.nextDue))}`, id);
+      // If alertType= sound, try to play beep
+      if(state.settings.alertType === 'sound') try{ playBeep(); } catch(e){}
+      // For vibration, navigator.vibrate if available
+      if(state.settings.alertType === 'vibrate' && navigator.vibrate) navigator.vibrate([200,100,200]);
+      // Increment snoozeCount only when snoozed; we don't change here
+    }
+
+    function confirmTaken(id){
+      // mark taken: update nextDue according to freq
+      const med = state.meds.find(m=>m.id===id);
+      if(!med) return;
+      // compute next due
+      const current = Date.now();
+      if(med.freq==='once'){
+        // remove record or set nextDue to null
+        med.nextDue = null;
+      } else if(med.freq==='daily'){
+        const d = new Date(med.nextDue || current); d.setDate(d.getDate()+1); med.nextDue = d.getTime();
+      } else if(med.freq==='every8'){
+        med.nextDue = (med.nextDue || current) + 8*60*60*1000;
+      } else {
+        // fallback daily
+        const d = new Date(med.nextDue || current); d.setDate(d.getDate()+1); med.nextDue = d.getTime();
+      }
+      med.snoozeCount = 0;
+      saveData();
+      // reschedule
+      if(med.nextDue) scheduleMed(med);
+      renderMedList(); renderActiveReminders();
+      closeModal();
+      // if settings notifyCare === 'always' -> notify
+      if(state.settings.notifyCare === 'always') notifyCaregiver(`El usuario confirmó la toma de ${med.name}`);
+      // feedback
+      alert('Tarea registrada: ' + med.name);
+    }
+
+    function snoozeMed(id, minutes=10){
+      const med = state.meds.find(m=>m.id===id);
+      if(!med) return;
+      med.nextDue = Date.now() + (minutes*60*1000);
+      med.snoozeCount = (med.snoozeCount || 0) + 1;
+      saveData(); scheduleMed(med); renderActiveReminders();
+      closeModal();
+      // if passed threshold for notifyCare
+      handleNotifyThreshold(med);
+    }
+
+    function handleNotifyThreshold(med){
+      const t = state.settings.notifyCare;
+      if(t==='never') return;
+      const threshold = t === 'after1' ? 1 : (t === 'after2' ? 2 : Infinity);
+      if(threshold !== Infinity && med.snoozeCount >= threshold){
+        notifyCaregiver(`Se intentó notificar: ${med.name} sin confirmar toma. Total de pospuestos: ${med.snoozeCount}`);
+      }
+    }
+
+    // ---------- Appointments ----------
+    function addApp({date,time,doctor,place}){
+      const id = uid('app');
+      state.apps.push({id,date,time,doctor,place});
+      saveData(); renderAppList(); renderActiveReminders();
+      // schedule a simple notification 1 day before at same time (demo: if date is today schedule 10s)
+      tryScheduleAppReminder({id,date,time});
+    }
+    function tryScheduleAppReminder(app){
+      const appointmentDate = new Date(app.date + 'T' + app.time);
+      const notifyAt = new Date(appointmentDate.getTime() - (24*60*60*1000)); // 1 day before
+      if(isNaN(notifyAt.getTime())) return;
+      // For demo: if notifyAt < now, schedule in 8 seconds to demo
+      const delay = (notifyAt.getTime() <= Date.now()) ? 8000 : (notifyAt.getTime() - Date.now());
+      setTimeout(()=> {
+        // show basic alert modal
+        showModal('Recordatorio de cita', `Mañana tienes una cita: ${app.doctor} • ${app.place}`, null, true);
+      }, delay);
+    }
+
+    // ---------- Modal controls ----------
+    let modalContext = {medId:null, isAppointment:false};
+    function showModal(title,text, medId=null, isAppointment=false){
+      modalContext = {medId, isAppointment};
+      modalTitle.textContent = title;
+      modalText.textContent = text;
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden','false');
+    }
+    function closeModal(){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); modalContext = {medId:null}; }
+
+    btnTaken.addEventListener('click', ()=> {
+      if(modalContext.isAppointment){ closeModal(); alert('Confirmaste asistencia'); return; }
+      if(modalContext.medId) confirmTaken(modalContext.medId);
+    });
+    btnSnooze.addEventListener('click', ()=> {
+      if(modalContext.isAppointment){ closeModal(); return; }
+      if(modalContext.medId) snoozeMed(modalContext.medId,10);
+    });
+    btnNotifyCare.addEventListener('click', ()=> {
+      if(modalContext.medId){
+        const med = state.meds.find(m=>m.id===modalContext.medId);
+        notifyCaregiver(`Alerta: ${med.name} sin confirmar toma.`);
+      } else {
+        notifyCaregiver('Notificación desde la app (usuario)');
+      }
+      closeModal();
+    });
+
+    // simulate caregiver notification (could become real SMS / push)
+    function notifyCaregiver(message){
+      const c = state.settings.caregiver;
+      if(!c || !c.phone){ alert('Notificar cuidador: ' + message + '\n(NOTA: no hay número configurado)'); return; }
+      // For demo we show alert; in production, integrate Twilio / push / sms gateway
+      alert(`Notificación enviada a ${c.name} (${c.phone}):\n\n${message}`);
+    }
+
+    // ---------- Settings ----------
+    function saveSettingsFromUI(){
+      state.settings.alertType = $('alertType').value;
+      state.settings.notifyCare = $('notifyCare').value;
+      state.settings.caregiver.name = $('careName').value;
+      state.settings.caregiver.phone = $('carePhone').value;
+      saveData(); alert('Ajustes guardados');
+    }
+
+    // reset test data
+    function resetData(){
+      if(!confirm('Borrar todos los datos de la app?')) return;
+      state = defaultCopy(); saveData();
+      // clear all timers
+      Object.values(timers).forEach(t=>clearTimeout(t)); timers={};
+      renderAll();
+      showScreen('splash');
+    }
+
+    // ---------- Schedules (on load) ----------
+    function scheduleAll(){
+      state.meds.forEach(m=> {
+        if(m.nextDue) scheduleMed(m);
+      });
+    }
+
+    // ---------- UI wiring ----------
+    // navigation buttons
+    $('goLogin').onclick = ()=> showScreen('login');
+    $('goRegister').onclick = ()=> showScreen('register');
+    $('btnBackFromLogin').onclick = ()=> showScreen('splash');
+    $('btnBackFromRegister').onclick = ()=> showScreen('splash');
+    $('toRegisterSmall').onclick = ()=> showScreen('register');
+
+    // login/register operations
+    $('btnLogin').onclick = ()=> {
+      const email = $('loginEmail').value.trim();
+      const pass = $('loginPass').value;
+      if(!email||!pass){ alert('Completa correo y contraseña'); return; }
+      if(login(email,pass)){ showScreen('app'); setActiveTab('home'); renderAll(); } else { alert('Usuario o contraseña incorrectos'); }
+    };
+    $('btnCreateAccount').onclick = ()=> {
+      const name = $('regName').value.trim();
+      const email = $('regEmail').value.trim();
+      const pass = $('regPass').value;
+      const role = $('regRole').value;
+      if(!name||!email||!pass){ alert('Completa todos los campos'); return; }
+      const ok = register({name,email,pass,role});
+      if(!ok){ alert('Ya existe un usuario con ese correo'); return; }
+      showScreen('app'); setActiveTab('home'); renderAll();
+    };
+
+    // bottom nav
+    $('tabHome').onclick = ()=> { setActiveTab('home'); };
+    $('tabMeds').onclick = ()=> { setActiveTab('meds'); renderMedList(); };
+    $('tabApps').onclick = ()=> { setActiveTab('apps'); renderAppList(); };
+    $('tabSettings').onclick = ()=> { setActiveTab('settings'); loadSettingsToUI(); };
+
+    // meds form
+    $('btnSaveMed').onclick = ()=> {
+      const name = $('medName').value.trim();
+      const dose = $('medDose').value.trim();
+      const time = $('medTime').value;
+      const freq = $('medFreq').value;
+      if(!name||!dose||!time){ alert('Completa nombre, dosis y hora'); return; }
+      addMed({name,dose,time,freq});
+      $('medName').value=''; $('medDose').value=''; $('medTime').value='12:00';
+      alert('Medicamento guardado');
+    };
+    $('btnClearMed').onclick = ()=> { $('medName').value=''; $('medDose').value=''; $('medTime').value='12:00'; };
+    $('btnAddMed_short').onclick = ()=> { setActiveTab('meds'); };
+
+    // apps form
+    $('btnSaveApp').onclick = ()=> {
+      const date = $('appDate').value;
+      const time = $('appTime').value;
+      const doctor = $('appDoctor').value.trim();
+      const place = $('appPlace').value.trim();
+      if(!date||!time||!doctor){ alert('Completa fecha, hora y médico'); return; }
+      addApp({date,time,doctor,place});
+      $('appDate').value=''; $('appTime').value=''; $('appDoctor').value=''; $('appPlace').value='';
+      alert('Cita guardada');
+    };
+    $('btnClearApp').onclick = ()=> { $('appDate').value=''; $('appTime').value=''; $('appDoctor').value=''; $('appPlace').value=''; };
+
+    // settings
+    $('btnSaveSettings').onclick = ()=> saveSettingsFromUI();
+    $('btnResetData').onclick = ()=> resetData();
+
+    // modal overlay close when clicking outside
+    overlay.addEventListener('click', (e)=> {
+      if(e.target === overlay) closeModal();
+    });
+
+    // highlight med (simple focus flash)
+    function highlightMed(id){
+      // scroll to med and add temporary style
+      const medCards = document.querySelectorAll('#medList .card');
+      if(medCards.length===0) { setActiveTab('meds'); return; }
+      // simplest approach: reopen med tab and rely on user
+      setActiveTab('meds');
+    }
+
+    // sound beep for alerts
+    function playBeep(){
+      try{
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = 880;
+        o.connect(g);
+        g.connect(ctx.destination);
+        g.gain.value = 0.05;
+        o.start();
+        setTimeout(()=>{ o.stop(); ctx.close(); }, 500);
+      }catch(e){ console.warn('Audio not available',e); }
+    }
+
+    // escape html
+    function escapeHtml(str){ if(!str) return ''; return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+
+    // load settings to UI
+    function loadSettingsToUI(){
+      $('alertType').value = state.settings.alertType;
+      $('notifyCare').value = state.settings.notifyCare;
+      $('careName').value = state.settings.caregiver.name || '';
+      $('carePhone').value = state.settings.caregiver.phone || '';
+    }
+
+    // render all visible lists
+    function renderAll(){
+      renderActiveReminders();
+      renderMedList();
+      renderAppList();
+      loadSettingsToUI();
+    }
+
+    // init after login
+    function initAfterLogin(){
+      // show app
+      showScreen('app');
+      setActiveTab('home');
+      // render
+      renderAll();
+      // schedule timers
+      scheduleAll();
+      // show greeting
+      const u = currentUser();
+      if(u){
+        $('headerSubtitle').textContent = `Bienvenido ${u.name.split(' ')[0] || u.name}`;
+      }
+    }
+
+    // Función central para verificar sesión e inicializar
+    function checkSessionAndInitialize(){
+      if(state.session) { initAfterLogin(); } else { showScreen('splash'); }
+      // bind small UI handlers
+      renderAll();
+    }
+    window.checkSessionAndInitialize = checkSessionAndInitialize; // Hacemos la función global
+
+
+    // Expose confirmTaken to global for inline calls (not ideal but works for demo)
+    window.confirmTaken = confirmTaken;
+
+    // For safety: persist state periodically
+    setInterval(()=> saveData(), 5000);
+
+    // initial sample data for demo if empty
+    if(state.users.length===0 && !state.session){
+      // create sample user (for demo)
+      state.users.push({name:'Cristina Gomez', email:'cristina@example.com', pass:'demo123', role:'adulto'});
+      // add sample med scheduled in 12 seconds for demo
+      const medId = uid('med');
+      const demoMedTime = new Date(Date.now() + 12000); // 12 sec
+      state.meds.push({id:medId,name:'Ibuprofeno',dose:'200 mg',time:formatTime(demoMedTime),freq:'daily',nextDue:Date.now() + 12000, snoozeCount:0});
+      // sample appointment
+      state.apps.push({id:uid('app'),date: (new Date()).toISOString().slice(0,10),time: formatTime(new Date(Date.now()+3600*1000)).slice(0,5),doctor:'Dermatología - Dr. Juan',place:'Clínica Central'});
+      saveData();
+      scheduleAll();
+    }
+
+    // Expose for debugging (optional)
+    window._vitalState = state;
+
+    // helper: schedule all meds again when page unload/resume
+    window.addEventListener('visibilitychange', ()=>{
+      if(!document.hidden) scheduleAll();
+    });
+
+  })();
+
+// CONTROL PANTALLA DE BIENVENIDA
+document.addEventListener("DOMContentLoaded", () => {
+  const startBtn = document.getElementById("startAppBtn");
+  const welcomeScreen = document.getElementById("welcome-screen");
+
+  if (startBtn && welcomeScreen) {
+    startBtn.addEventListener("click", () => {
+      welcomeScreen.style.display = "none";
+      
+      // Llama a la lógica de inicialización que verifica la sesión.
+      if (typeof window.checkSessionAndInitialize === 'function') {
+         window.checkSessionAndInitialize();
+      }
+    });
+  } else if (typeof window.checkSessionAndInitialize === 'function') {
+      // Si la pantalla de bienvenida no existe (ej. el usuario la quitó), 
+      // inicializamos inmediatamente.
+      window.checkSessionAndInitialize();
+  }
+});
+  </script>
+</body>
+</html>
